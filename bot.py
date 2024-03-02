@@ -76,7 +76,7 @@ def main():
                         self.quote_guilds.append(QuoteGuild(guild, quote_channel))
                     print(f'{get_log_time()} Successfully loaded {self.FILENAME}')
 
-        def write_json():
+        def write_json(self):
             data = {}
             for guild in self.quote_guilds:
                 data[guild.id] = {'quote_channel_id': guild.quote_channel.id}
