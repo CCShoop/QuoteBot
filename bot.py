@@ -130,11 +130,11 @@ def main():
     @app_commands.describe(message_id='Discord message id to quote.')
     async def quote_command(interaction: Interaction, message_id: str = None):
         try:
-            message_id = int(message_id)
             quote_guild = client.get_quote_guild(interaction.guild)
             if not quote_guild:
                 raise Exception('\'None\' return from quote guild request.')
             if message_id:
+                message_id = int(message_id)
                 quote_message = quote_guild.quote_channel.last_message()
                 if not quote_message:
                     raise Exception('\'None\' return from last message request.')
