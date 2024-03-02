@@ -78,8 +78,8 @@ def main():
 
         def write_json(self):
             data = {}
-            for guild in self.quote_guilds:
-                data[guild.id] = {'quote_channel_id': guild.quote_channel.id}
+            for quote_guild in self.quote_guilds:
+                data[quote_guild.guild.id] = {'quote_channel_id': quote_guild.quote_channel.id}
             json_data = json.dumps(data, indent=4)
             print(f'{get_log_time()} Writing {self.FILENAME}')
             with open(self.FILENAME, 'w+', encoding='utf-8') as file:
