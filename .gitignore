@@ -1,3 +1,4 @@
 .env
 PushChangesAndRestartBot.bat
+info.json
 __pycache__
