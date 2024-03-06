@@ -33,11 +33,14 @@ def main():
             self.date_time = quote_msg.created_at.astimezone().ctime()
             self.attachment_path = None
         
-        def get_string(self):
+        def get_string(self, alternate_format = False):
             quote = ''
-            if self.content != '':
-                quote = f'"{self.content}"\n'
-            quote += f'- {self.author.name}, {self.date_time}'
+            if alternate_format:
+                quote = f'[{self.date_time}] {self.author.name}: {self.content}'
+            else:
+                if self.content != '':
+                    quote = f'"{self.content}"\n'
+                quote += f'- {self.author.name}, {self.date_time}'
             return quote
 
     class QuoteGuild():
@@ -134,47 +137,49 @@ def main():
             print(f'{get_log_time()} Failed to set channel: {e}')
 
     @client.tree.command(name='quote', description='Quote the most recent or a specific Discord message.')
+    @app_commands.describe(message_count='Number of messages to quote. Default is 1. WITHOUT message_id, it will quote the last (n) messages in the current channel. WITH message_id, it will quote the provided message as well as the following (n-1) messages.')
     @app_commands.describe(message_id='Discord message id to quote.')
-    async def quote_command(interaction: Interaction, message_id: str = None):
+    async def quote_command(interaction: Interaction, message_count: int = 1, message_id: str = None):
         try:
             quote_guild = client.get_quote_guild(interaction.guild)
             if not quote_guild:
                 await interaction.response.send_message('There is no quote channel set for this guild! Please set one with /setchannel.')
                 return
+            quote_messages = []
             if message_id:
                 message_id = int(message_id)
-                # quote_message = None
-                # for text_channel in quote_guild.guild.text_channels:
-                #     quote_message = await text_channel.fetch_message(message_id)
-                #     if quote_message:
-                #         break
-                quote_message = await quote_guild.guild.fetch_message(message_id)
-                if not quote_message:
-                    raise Exception('\'None\' return from fetch message request.')
+                first_quote_message = await quote_guild.guild.fetch_message(message_id)
+                if not first_quote_message:
+                    raise Exception('\'None\' return from fetch message(s) request.')
+                quote_messages.append(first_quote_message)
+                if message_count > 1:
+                    async for message in first_quote_message.channel.history(after=first_quote_message, limit=message_count):
+                        quote_messages.append(message)
             else:
-                async for message in interaction.channel.history(limit=1):
-                    quote_message = message
-                    break
-                if not quote_message:
-                    raise Exception('\'None\' return from last message request.')
-            quote = Quote(quote_message)
-            quote_string = quote.get_string()
-            if quote_message.attachments:
-                quote.attachment_path = f'{quote_message.id}.png'
-                with open(quote.attachment_path, 'wb') as file:
-                    await quote_message.attachments[0].save(file)
-                await quote_guild.quote_channel.send(content=quote_string, file=File(quote.attachment_path))
-                try:
-                    os.remove(quote.attachment_path)
-                except OSError as e:
-                    print(f'{get_log_time()}> Error deleting {quote.attachment_path}: {e}')
-            else:
-                await quote_guild.quote_channel.send(content=quote_string)
+                async for message in interaction.channel.history(limit=message_count):
+                    quote_messages.append(message)
+            if not quote_messages:
+                raise Exception('\'None\' return from last message(s) request.')
+            alternate_format = (len(quote_messages) != 1)
+            for quote_message in quote_messages:
+                quote = Quote(quote_message)
+                quote_string = quote.get_string(alternate_format)
+                if quote_message.attachments:
+                    quote.attachment_path = f'{quote_message.id}.png'
+                    with open(quote.attachment_path, 'wb') as file:
+                        await quote_message.attachments[0].save(file)
+                    await quote_guild.quote_channel.send(content=quote_string, file=File(quote.attachment_path))
+                    try:
+                        os.remove(quote.attachment_path)
+                    except OSError as e:
+                        print(f'{get_log_time()}> Error deleting {quote.attachment_path}: {e}')
+                else:
+                    await quote_guild.quote_channel.send(content=quote_string)
             await interaction.response.send_message(f'Quote successfully added to {quote_guild.quote_channel.name}.')
-            print(f'{get_log_time()} Successfully got last message quote')
+            print(f'{get_log_time()} Successfully got last message(s) quote')
         except Exception as e:
-            await interaction.response.send_message(f'Failed to quote message: {e}.')
-            print(f'{get_log_time()} Failed to quote message: {e}')
+            await interaction.response.send_message(f'Failed to quote message(s): {e}.')
+            print(f'{get_log_time()} Failed to quote message(s): {e}')
 
     client.run(discord_token)
 
