@@ -160,6 +160,7 @@ def main():
                     quote_messages.append(message)
             if not quote_messages:
                 raise Exception('\'None\' return from last message(s) request.')
+            quote_messages.reverse()
             alternate_format = (len(quote_messages) != 1)
             for quote_message in quote_messages:
                 quote = Quote(quote_message)
