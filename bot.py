@@ -36,11 +36,11 @@ def main():
         def get_string(self, alternate_format = False):
             quote = ''
             if alternate_format:
-                quote = f'[{self.date_time}] {self.author.name}: {self.content}'
+                quote = f'{self.author.name}: {self.content}'
             else:
                 if self.content != '':
                     quote = f'"{self.content}"\n'
-                quote += f'- {self.author.name}, {self.date_time}'
+                quote += f'- {self.author.name}, {self.date_time}, in {quote_msg.channel.name}'
             return quote
 
     class QuoteGuild():
@@ -148,7 +148,7 @@ def main():
             quote_messages = []
             if message_id:
                 message_id = int(message_id)
-                first_quote_message = await quote_guild.guild.fetch_message(message_id)
+                first_quote_message = await interaction.channel.fetch_message(message_id)
                 if not first_quote_message:
                     raise Exception('\'None\' return from fetch message(s) request.')
                 quote_messages.append(first_quote_message)
@@ -162,6 +162,8 @@ def main():
                 raise Exception('\'None\' return from last message(s) request.')
             quote_messages.reverse()
             alternate_format = (len(quote_messages) != 1)
+            if len(quote_message) != 1:
+                quote_guild.quote_channel.send(f'In {interaction.channel.name} at {self.date_time}:')
             for quote_message in quote_messages:
                 quote = Quote(quote_message)
                 quote_string = quote.get_string(alternate_format)
