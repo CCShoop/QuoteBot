@@ -30,7 +30,7 @@ def main():
         def __init__(self, quote_msg: Message):
             self.author = quote_msg.author
             self.content = quote_msg.content
-            self.channel_name = quote_msg.channel.name
+            self.channel_id = quote_msg.channel.id
             self.date_time = quote_msg.created_at.astimezone().ctime()
             self.attachment_path = None
         
@@ -41,7 +41,7 @@ def main():
             else:
                 if self.content != '':
                     quote = f'"{self.content}"\n'
-                quote += f'- {self.author.name}, {self.date_time}, in {self.channel_name}'
+                quote += f'- {self.author.name}, {self.date_time}, in <#{self.channel_id}>'
             return quote
 
     class QuoteGuild():
@@ -179,7 +179,7 @@ def main():
                         print(f'{get_log_time()}> Error deleting {quote.attachment_path}: {e}')
                 else:
                     await quote_guild.quote_channel.send(content=quote_string)
-            await interaction.response.send_message(f'Quote successfully added to {quote_guild.quote_channel.name}.')
+            await interaction.response.send_message(f'Quote successfully added to <#{quote_guild.quote_channel.id}>.')
             print(f'{get_log_time()} Successfully got last message(s) quote')
         except Exception as e:
             await interaction.response.send_message(f'Failed to quote message(s): {e}.')
