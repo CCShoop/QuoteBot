@@ -30,6 +30,7 @@ def main():
         def __init__(self, quote_msg: Message):
             self.author = quote_msg.author
             self.content = quote_msg.content
+            self.channel_name = quote_msg.channel.name
             self.date_time = quote_msg.created_at.astimezone().ctime()
             self.attachment_path = None
         
@@ -40,7 +41,7 @@ def main():
             else:
                 if self.content != '':
                     quote = f'"{self.content}"\n'
-                quote += f'- {self.author.name}, {self.date_time}, in {quote_msg.channel.name}'
+                quote += f'- {self.author.name}, {self.date_time}, in {self.channel_name}'
             return quote
 
     class QuoteGuild():
