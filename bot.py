@@ -159,12 +159,14 @@ def main():
             else:
                 async for message in interaction.channel.history(limit=message_count):
                     quote_messages.append(message)
+                quote_messages.reverse()
             if not quote_messages:
                 raise Exception('\'None\' return from last message(s) request.')
-            quote_messages.reverse()
+            if quote_messages[0].reference:
+                quote_messages.insert(0, quote_messages[0].reference)
             alternate_format = (len(quote_messages) != 1)
             if len(quote_messages) != 1:
-                quote_guild.quote_channel.send(f'In {interaction.channel.name} at {self.date_time}:')
+                quote_guild.quote_channel.send(f'In <#{interaction.channel.id}> at {self.date_time}:')
             for quote_message in quote_messages:
                 quote = Quote(quote_message)
                 quote_string = quote.get_string(alternate_format)
