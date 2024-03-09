@@ -162,7 +162,7 @@ def main():
                 raise Exception('\'None\' return from last message(s) request.')
             quote_messages.reverse()
             alternate_format = (len(quote_messages) != 1)
-            if len(quote_message) != 1:
+            if len(quote_messages) != 1:
                 quote_guild.quote_channel.send(f'In {interaction.channel.name} at {self.date_time}:')
             for quote_message in quote_messages:
                 quote = Quote(quote_message)
