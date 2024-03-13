@@ -154,7 +154,7 @@ def main():
                     raise Exception('\'None\' return from fetch message(s) request.')
                 quote_messages.append(first_quote_message)
                 if message_count > 1:
-                    async for message in first_quote_message.channel.history(after=first_quote_message, limit=message_count):
+                    async for message in first_quote_message.channel.history(after=first_quote_message, limit=message_count-1):
                         quote_messages.append(message)
             else:
                 async for message in interaction.channel.history(limit=message_count):
