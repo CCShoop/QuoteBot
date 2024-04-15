@@ -173,7 +173,7 @@ def main():
             alternate_format = (len(quote_messages) != 1)
             if len(quote_messages) != 1:
                 try:
-                    await quote_guild.quote_channel.send(f'__In <#{interaction.channel.id}>, {quote_messages[0].created_at.astimezone().ctime()}:__')
+                    await quote_guild.quote_channel.send(f'**In <#{interaction.channel.id}>, {quote_messages[0].created_at.astimezone().ctime()}:**')
                 except Exception as e:
                     print(f'Error sending first message while referencing first message object: {e}\nTrying again referencing second message object...')
                     try:
