@@ -37,11 +37,11 @@ def main():
         def get_string(self, alternate_format = False):
             quote = ''
             if alternate_format:
-                quote = f'{self.author.name}: {self.content}'
+                quote = f'{self.author.mention}: "{self.content}"'
             else:
                 if self.content != '':
                     quote = f'"{self.content}"\n'
-                quote += f'- {self.author.name}, {self.date_time}, in <#{self.channel_id}>'
+                quote += f'- {self.author.mention}, {self.date_time}, in <#{self.channel_id}>'
             return quote
 
     class QuoteGuild():
@@ -163,7 +163,7 @@ def main():
             if not quote_messages:
                 raise Exception('\'None\' return from last message(s) request.')
             if quote_messages[0].reference:
-                quote_messages.insert(0, quote_messages[0].reference)
+                quote_messages.insert(0, await interaction.channel.fetch_message(quote_messages[0].reference.message_id))
             alternate_format = (len(quote_messages) != 1)
             if len(quote_messages) != 1:
                 try:
