@@ -37,11 +37,17 @@ def main():
         def get_string(self, alternate_format = False):
             quote = ''
             if alternate_format:
-                quote = f'{self.author.mention}: "{self.content}"'
+                try:
+                    quote = f'{self.author.mention}: "{self.content}"'
+                except:
+                    quote = f'{self.author.name}: "{self.content}"'
             else:
                 if self.content != '':
                     quote = f'"{self.content}"\n'
-                quote += f'- {self.author.mention}, {self.date_time}, in <#{self.channel_id}>'
+                try:
+                    quote += f'- {self.author.mention}, {self.date_time}, in <#{self.channel_id}>'
+                except:
+                    quote += f'- {self.author.name}, {self.date_time}, in <#{self.channel_id}>'
             return quote
 
     class QuoteGuild():
