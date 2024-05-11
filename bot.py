@@ -138,9 +138,9 @@ def main():
                 quote_channel = interaction.channel
             client.quote_guilds.append(QuoteGuild(interaction.guild, quote_channel))
             client.write_json()
-            await interaction.response.send_message(f'Successfully set quote channel for this guild to {quote_channel.name}.')
+            await interaction.response.send_message(f'Successfully set quote channel for this guild to {quote_channel.name}.', ephemeral=True)
         except Exception as e:
-            await interaction.response.send_message(f'Failed to set channel: {e}')
+            await interaction.response.send_message(f'Failed to set channel: {e}', ephemeral=True)
             print(f'{get_log_time()} Failed to set channel: {e}')
 
     @client.tree.command(name='quote', description='Quote the most recent or a specific Discord message.')
@@ -150,7 +150,7 @@ def main():
         try:
             quote_guild = client.get_quote_guild(interaction.guild)
             if not quote_guild:
-                await interaction.response.send_message('There is no quote channel set for this guild! Please set one with /setchannel.')
+                await interaction.response.send_message('There is no quote channel set for this guild! Please set one with /setchannel.', ephemeral=True)
                 return
             quote_messages = []
             if message_id:
@@ -180,7 +180,7 @@ def main():
                         await quote_guild.quote_channel.send(f'__In <#{interaction.channel.id}>, {quote_messages[1].created_at.astimezone().ctime()}:__')
                     except Exception as e:
                         print(f'Error referencing second message object: {e}')
-                        await interaction.response.send_message(f'Error: {e}')
+                        await interaction.response.send_message(f'Error: {e}', ephemeral=True)
                         return
             for quote_message in quote_messages:
                 quote = Quote(quote_message)
@@ -196,10 +196,10 @@ def main():
                         print(f'{get_log_time()}> Error deleting {quote.attachment_path}: {e}')
                 else:
                     await quote_guild.quote_channel.send(content=quote_string)
-            await interaction.response.send_message(f'Quote successfully added to <#{quote_guild.quote_channel.id}>.')
-            print(f'{get_log_time()} Successfully got last message(s) quote')
+            await interaction.response.send_message(f'Quote successfully added to <#{quote_guild.quote_channel.id}>.', ephemeral=True)
+            print(f'{get_log_time()} Successfully quoted message(s)')
         except Exception as e:
-            await interaction.response.send_message(f'Failed to quote message(s): {e}.')
+            await interaction.response.send_message(f'Failed to quote message(s): {e}.', ephemeral=True)
             print(f'{get_log_time()} Failed to quote message(s): {e}')
 
     client.run(discord_token)
