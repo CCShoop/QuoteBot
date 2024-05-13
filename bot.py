@@ -148,6 +148,7 @@ def main():
     @app_commands.describe(message_id='Discord message id to quote.')
     async def quote_command(interaction: Interaction, message_count: int = 1, message_id: str = None):
         try:
+            await interaction.response.defer()
             quote_guild = client.get_quote_guild(interaction.guild)
             if not quote_guild:
                 await interaction.response.send_message('There is no quote channel set for this guild! Please set one with /setchannel.', ephemeral=True)
@@ -196,10 +197,10 @@ def main():
                         print(f'{get_log_time()}> Error deleting {quote.attachment_path}: {e}')
                 else:
                     await quote_guild.quote_channel.send(content=quote_string)
-            await interaction.response.send_message(f'Quote successfully added to <#{quote_guild.quote_channel.id}>.', ephemeral=True)
+            await interaction.followup.send(f'Quote successfully added to <#{quote_guild.quote_channel.id}>.', ephemeral=True)
             print(f'{get_log_time()} Successfully quoted message(s)')
         except Exception as e:
-            await interaction.response.send_message(f'Failed to quote message(s): {e}.', ephemeral=True)
+            await interaction.followup.send(f'Failed to quote message(s): {e}.', ephemeral=True)
             print(f'{get_log_time()} Failed to quote message(s): {e}')
 
     client.run(discord_token)
