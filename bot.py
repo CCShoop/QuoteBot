@@ -148,27 +148,33 @@ def main():
     @app_commands.describe(message_id='Discord message id to quote.')
     async def quote_command(interaction: Interaction, message_count: int = 1, message_id: str = None):
         try:
-            await interaction.response.defer()
             quote_guild = client.get_quote_guild(interaction.guild)
             if not quote_guild:
                 await interaction.response.send_message('There is no quote channel set for this guild! Please set one with /setchannel.', ephemeral=True)
                 return
             quote_messages = []
+            # Grab specific message(s)
             if message_id:
                 message_id = int(message_id)
                 first_quote_message = await interaction.channel.fetch_message(message_id)
                 if not first_quote_message:
+                    await interaction.response.send_message(f'Error: failed to fetch message with id {message_id}.', ephemeral=True)
                     raise Exception('\'None\' return from fetch message(s) request.')
                 quote_messages.append(first_quote_message)
                 if message_count > 1:
                     async for message in first_quote_message.channel.history(after=first_quote_message, limit=message_count-1):
                         quote_messages.append(message)
+            # Grab last message(s)
             else:
                 async for message in interaction.channel.history(limit=message_count):
                     quote_messages.append(message)
                 quote_messages.reverse()
+            # Check that there are messages
             if not quote_messages:
-                raise Exception('\'None\' return from last message(s) request.')
+                await interaction.response.send_message('Error: Failed to fetch message(s).', ephemeral=True)
+                raise Exception('No quote messages found.')
+            await interaction.response.defer(ephemeral=True)
+            # Grab message that was replied to by first message
             if quote_messages[0].reference:
                 quote_messages.insert(0, await interaction.channel.fetch_message(quote_messages[0].reference.message_id))
             alternate_format = (len(quote_messages) != 1)
@@ -181,8 +187,9 @@ def main():
                         await quote_guild.quote_channel.send(f'__In <#{interaction.channel.id}>, {quote_messages[1].created_at.astimezone().ctime()}:__')
                     except Exception as e:
                         print(f'Error referencing second message object: {e}')
-                        await interaction.response.send_message(f'Error: {e}', ephemeral=True)
+                        await interaction.followup.send(f'Error: {e}')
                         return
+            # Send quote messages in quote channel
             for quote_message in quote_messages:
                 quote = Quote(quote_message)
                 quote_string = quote.get_string(alternate_format)
@@ -197,10 +204,10 @@ def main():
                         print(f'{get_log_time()}> Error deleting {quote.attachment_path}: {e}')
                 else:
                     await quote_guild.quote_channel.send(content=quote_string)
-            await interaction.followup.send(f'Quote successfully added to <#{quote_guild.quote_channel.id}>.', ephemeral=True)
+            await interaction.followup.send(f'Quote successfully added to <#{quote_guild.quote_channel.id}>.')
             print(f'{get_log_time()} Successfully quoted message(s)')
         except Exception as e:
-            await interaction.followup.send(f'Failed to quote message(s): {e}.', ephemeral=True)
+            await interaction.followup.send(f'Failed to quote message(s): {e}.')
             print(f'{get_log_time()} Failed to quote message(s): {e}')
 
     client.run(discord_token)
