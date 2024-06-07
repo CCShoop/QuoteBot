@@ -37,16 +37,16 @@ def main():
         def get_string(self, alternate_format = False):
             quote = ''
             if alternate_format:
-                try:
-                    quote = f'{self.author.mention}: "{self.content}"'
-                except:
+                if self.author.nick:
+                    quote = f'{self.author.nick}: "{self.content}"'
+                else:
                     quote = f'{self.author.name}: "{self.content}"'
             else:
                 if self.content != '':
                     quote = f'"{self.content}"\n'
-                try:
-                    quote += f'- {self.author.mention}, {self.date_time}, in <#{self.channel_id}>'
-                except:
+                if self.author.nick:
+                    quote += f'- {self.author.nick}, {self.date_time}, in <#{self.channel_id}>'
+                else:
                     quote += f'- {self.author.name}, {self.date_time}, in <#{self.channel_id}>'
             return quote
 
