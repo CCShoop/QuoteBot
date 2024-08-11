@@ -2,8 +2,12 @@
 
 import os
 import json
+from dotenv import load_dotenv
 from datetime import datetime
 from discord import app_commands, Interaction, Intents, Client, TextChannel, Message, Guild, File
+
+
+load_dotenv()
 
 
 def get_log_time():
