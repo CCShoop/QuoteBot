@@ -1,3 +1,3 @@
 @echo off
 
-python3 bot.py
+python3 quotebot.py
