@@ -2,59 +2,66 @@
 
 import os
 import json
+import logging
 from dotenv import load_dotenv
-from datetime import datetime
 from discord import app_commands, Interaction, Intents, Client, TextChannel, Message, Guild, File
 
 
 load_dotenv()
 
+# Logger setup
+logger = logging.getLogger("Quote Bot")
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter(fmt='[Quote Bot] [%(asctime)s] [%(levelname)s\t] %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
-def get_log_time():
-    time = datetime.now().astimezone()
-    output = ''
-    if time.hour < 10:
-        output += '0'
-    output += f'{time.hour}:'
-    if time.minute < 10:
-        output += '0'
-    output += f'{time.minute}:'
-    if time.second < 10:
-        output += '0'
-    output += f'{time.second}>'
-    return output
+file_handler = logging.FileHandler('quotebot.log')
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(formatter)
+
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+console_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
+logger.addHandler(console_handler)
 
 
 class Quote():
     def __init__(self, quote_msg: Message):
+        self.guild = quote_msg.guild
         self.author = quote_msg.author
         self.content = quote_msg.content
         self.channel_id = quote_msg.channel.id
+        self.message_id = quote_msg.id
         self.date_time = quote_msg.created_at.astimezone().ctime()
         self.attachment_path = None
 
     def get_string(self, alternate_format=False):
-        quote = ''
+        quote = f'https://discord.com/channels/{self.guild.id}/{self.channel_id}/{self.message_id}\n'
         if alternate_format:
             if self.author.nick:
-                quote = f'{self.author.nick}:'
+                quote += f'**{self.author.nick}:** '
             else:
-                quote = f'{self.author.name}:'
+                quote += f'**{self.author.name}:** '
             if self.content != '':
-                quote += f' "{self.content}"'
+                quote += f'"{self.content}"\n'
+            else:
+                quote += '\n'
         else:
             if self.content != '':
-                quote = f'"{self.content}"\n'
+                quote += f'"{self.content}"\n'
             if self.author.nick:
-                quote += f'- {self.author.nick}, {self.date_time}, in <#{self.channel_id}>'
+                quote += f'**- {self.author.nick}, {self.date_time}, in <#{self.channel_id}>**\n'
             else:
-                quote += f'- {self.author.name}, {self.date_time}, in <#{self.channel_id}>'
+                quote += f'**- {self.author.name}, {self.date_time}, in <#{self.channel_id}>**\n'
         return quote
+
 
 class QuoteGuild():
     def __init__(self, guild: Guild, quote_channel: TextChannel):
         self.guild = guild
         self.quote_channel = quote_channel
+
 
 class QuoteClient(Client):
     def __init__(self, intents):
@@ -71,7 +78,7 @@ class QuoteClient(Client):
 
     def load_json(self):
         if os.path.exists(self.FILENAME):
-            print(f'{get_log_time()} Loading {self.FILENAME}')
+            logger.info(f'Loading {self.FILENAME}')
             with open(self.FILENAME, 'r', encoding='utf-8') as file:
                 data = json.load(file)
                 for firstField, secondField in data.items():
@@ -87,18 +94,18 @@ class QuoteClient(Client):
                             raise Exception('Failed to get guild from id in json')
                         if not quote_channel:
                             raise Exception('Failed to get quote channel from id in json')
-                        print(f'{get_log_time()} Got guild id of {guild.id} and quote channel id of {quote_channel.id}')
+                        logger.info(f'Got guild id of {guild.id} and quote channel id of {quote_channel.id}')
                         self.quote_guilds.append(QuoteGuild(guild, quote_channel))
-                print(f'{get_log_time()} Successfully loaded {self.FILENAME}')
+                logger.info(f'Successfully loaded {self.FILENAME}')
         else:
-            print(f'{get_log_time()} File {self.FILENAME} does not exist')
+            logger.info(f'File {self.FILENAME} does not exist')
 
     def write_json(self):
         data = {}
         for quote_guild in self.quote_guilds:
             data[quote_guild.guild.id] = {'quote_channel_id': quote_guild.quote_channel.id}
         json_data = json.dumps(data, indent=4)
-        print(f'{get_log_time()} Writing {self.FILENAME}')
+        logger.info(f'Writing {self.FILENAME}')
         with open(self.FILENAME, 'w+', encoding='utf-8') as file:
             file.write(json_data)
 
@@ -109,10 +116,12 @@ class QuoteClient(Client):
 discord_token = os.getenv('DISCORD_TOKEN')
 client = QuoteClient(intents=Intents.all())
 
+
 @client.event
 async def on_ready():
-    print(f'{get_log_time()} {client.user} has connected to Discord!')
+    logger.info(f'{client.user} has connected to Discord!')
     client.load_json()
+
 
 @client.tree.command(name='setchannel', description='Set a quote channel for a guild.')
 @app_commands.describe(channel_name='Name of the quote channel.')
@@ -121,7 +130,7 @@ async def setchannel_command(interaction: Interaction, channel_name: str = None,
     try:
         if channel_name:
             channel_name = channel_name.to_lower().replace(' ', '-')
-            print(f'{get_log_time()} Setting quote channel for {interaction.guild.name} to provided NAME {channel_name}')
+            logger.info(f'Setting quote channel for {interaction.guild.name} to provided NAME {channel_name}')
             for text_channel in interaction.guild.text_channels():
                 if text_channel.name == channel_name:
                     quote_channel = text_channel
@@ -129,20 +138,21 @@ async def setchannel_command(interaction: Interaction, channel_name: str = None,
             if not quote_channel:
                 raise Exception('No text channel found with provided channel name')
         elif channel_id:
-            print(f'{get_log_time()} Setting quote channel for {interaction.guild.name} to provided ID {channel_id}')
+            logger.info(f'Setting quote channel for {interaction.guild.name} to provided ID {channel_id}')
             channel_id = int(channel_id)
             quote_channel = client.get_channel(channel_id)
             if not quote_channel:
                 raise Exception('No text channel found with provided channel id')
         else:
-            print(f'{get_log_time()} Setting quote channel for {interaction.guild.name} to command\'s channel')
+            logger.info(f'Setting quote channel for {interaction.guild.name} to command\'s channel')
             quote_channel = interaction.channel
         client.quote_guilds.append(QuoteGuild(interaction.guild, quote_channel))
         client.write_json()
         await interaction.response.send_message(f'Successfully set quote channel for this guild to {quote_channel.name}.', ephemeral=True)
     except Exception as e:
         await interaction.response.send_message(f'Failed to set channel: {e}', ephemeral=True)
-        print(f'{get_log_time()} Failed to set channel: {e}')
+        logger.info(f'Failed to set channel: {e}')
+
 
 @client.tree.command(name='quote', description='Quote the most recent or a specific Discord message.')
 @app_commands.describe(message_count='Number of messages to quote. Default is 1. WITHOUT message_id, it will quote the last (n) messages in the current channel. WITH message_id, it will quote the provided message as well as the following (n-1) messages.')
@@ -163,7 +173,7 @@ async def quote_command(interaction: Interaction, message_count: int = 1, messag
                 raise Exception('\'None\' return from fetch message(s) request.')
             quote_messages.append(first_quote_message)
             if message_count > 1:
-                async for message in first_quote_message.channel.history(after=first_quote_message, limit=message_count-1):
+                async for message in first_quote_message.channel.history(after=first_quote_message, limit=message_count - 1):
                     quote_messages.append(message)
         # Grab last message(s)
         else:
@@ -183,32 +193,42 @@ async def quote_command(interaction: Interaction, message_count: int = 1, messag
             try:
                 await quote_guild.quote_channel.send(f'**In <#{interaction.channel.id}>, {quote_messages[0].created_at.astimezone().ctime()}:**')
             except Exception as e:
-                print(f'Error sending first message while referencing first message object: {e}\nTrying again referencing second message object...')
+                logger.error(f'Error sending first message while referencing first message object: {e}\nTrying again referencing second message object...')
                 try:
                     await quote_guild.quote_channel.send(f'__In <#{interaction.channel.id}>, {quote_messages[1].created_at.astimezone().ctime()}:__')
                 except Exception as e:
-                    print(f'Error referencing second message object: {e}')
+                    logger.error(f'Error referencing second message object: {e}')
                     await interaction.followup.send(f'Error: {e}')
                     return
         # Send quote messages in quote channel
+        quote_string = ''
+        files = []
         for quote_message in quote_messages:
             quote = Quote(quote_message)
-            quote_string = quote.get_string(alternate_format)
+            quote_string += quote.get_string(alternate_format)
             if quote_message.attachments:
-                quote.attachment_path = f'{quote_message.id}.png'
-                with open(quote.attachment_path, 'wb') as file:
-                    await quote_message.attachments[0].save(file)
-                await quote_guild.quote_channel.send(content=quote_string, file=File(quote.attachment_path))
-                try:
-                    os.remove(quote.attachment_path)
-                except OSError as e:
-                    print(f'{get_log_time()}> Error deleting {quote.attachment_path}: {e}')
-            else:
-                await quote_guild.quote_channel.send(content=quote_string)
+                counter = 0
+                for attachment in quote_message.attachments:
+                    quote.attachment_path = f'{quote_message.id}_{counter}.png'
+                    with open(quote.attachment_path, 'wb') as file:
+                        await attachment.save(file)
+                    files.append(File(quote.attachment_path))
+                    try:
+                        os.remove(quote.attachment_path)
+                    except OSError as e:
+                        logger.error(f'Error deleting {quote.attachment_path}: {e}')
+                    counter += 1
+        if len(files) > 0:
+            await quote_guild.quote_channel.send(content=quote_string, files=files)
+        elif quote_string != '':
+            await quote_guild.quote_channel.send(content=quote_string)
+        else:
+            await interaction.followup.send('Empty quote.')
+            return
         await interaction.followup.send(f'Quote successfully added to <#{quote_guild.quote_channel.id}>.')
-        print(f'{get_log_time()} Successfully quoted message(s)')
+        logger.info('Successfully quoted message(s)')
     except Exception as e:
         await interaction.followup.send(f'Failed to quote message(s): {e}.')
-        print(f'{get_log_time()} Failed to quote message(s): {e}')
+        logger.error(f'Failed to quote message(s): {e}')
 
 client.run(discord_token)
