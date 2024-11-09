@@ -37,7 +37,7 @@ class Quote():
         self.attachment_path = None
 
     def get_string(self, alternate_format=False):
-        quote = f'https://discord.com/channels/{self.guild.id}/{self.channel_id}/{self.message_id}\n'
+        quote = ''
         if alternate_format:
             if self.author.nick:
                 quote += f'**{self.author.nick}:** '
@@ -191,11 +191,12 @@ async def quote_command(interaction: Interaction, message_count: int = 1, messag
         alternate_format = (len(quote_messages) != 1)
         if len(quote_messages) != 1:
             try:
-                await quote_guild.quote_channel.send(f'**In <#{interaction.channel.id}>, {quote_messages[0].created_at.astimezone().ctime()}:**')
+                await quote_guild.quote_channel.send(f'**https://discord.com/channels/{quote_messages[0].guild.id}/{quote_messages[0].channel.id}/{quote_messages[0].message.id}, {quote_messages[0].created_at.astimezone().ctime()}:**')
             except Exception as e:
-                logger.error(f'Error sending first message while referencing first message object: {e}\nTrying again referencing second message object...')
+                logger.error(f'Error sending first message while referencing first message object: {e}')
+                logger.error('Trying again, referencing second message object...')
                 try:
-                    await quote_guild.quote_channel.send(f'__In <#{interaction.channel.id}>, {quote_messages[1].created_at.astimezone().ctime()}:__')
+                    await quote_guild.quote_channel.send(f'**https://discord.com/channels/{quote_messages[1].guild.id}/{quote_messages[1].channel.id}/{quote_messages[1].message.id}, {quote_messages[1].created_at.astimezone().ctime()}:**')
                 except Exception as e:
                     logger.error(f'Error referencing second message object: {e}')
                     await interaction.followup.send(f'Error: {e}')
@@ -218,14 +219,18 @@ async def quote_command(interaction: Interaction, message_count: int = 1, messag
                     except OSError as e:
                         logger.error(f'Error deleting {quote.attachment_path}: {e}')
                     counter += 1
+        quote = None
         if len(files) > 0:
-            await quote_guild.quote_channel.send(content=quote_string, files=files)
+            quote = await quote_guild.quote_channel.send(content=quote_string, files=files)
         elif quote_string != '':
-            await quote_guild.quote_channel.send(content=quote_string)
+            quote = await quote_guild.quote_channel.send(content=quote_string)
         else:
             await interaction.followup.send('Empty quote.')
             return
-        await interaction.followup.send(f'Quote successfully added to <#{quote_guild.quote_channel.id}>.')
+        quote_id = ''
+        if quote is not None:
+            quote_id = f"{quote.id}"
+        await interaction.followup.send(f'Quote successfully added! https://discord.com/channels/{quote_guild.guild.id}/{quote_guild.quote_channel.id}/{quote_id}')
         logger.info('Successfully quoted message(s)')
     except Exception as e:
         await interaction.followup.send(f'Failed to quote message(s): {e}.')
