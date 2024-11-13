@@ -191,12 +191,12 @@ async def quote_command(interaction: Interaction, message_count: int = 1, messag
         alternate_format = (len(quote_messages) != 1)
         if len(quote_messages) != 1:
             try:
-                await quote_guild.quote_channel.send(f'**https://discord.com/channels/{quote_messages[0].guild.id}/{quote_messages[0].channel.id}/{quote_messages[0].message.id}, {quote_messages[0].created_at.astimezone().ctime()}:**')
+                await quote_guild.quote_channel.send(f'**https://discord.com/channels/{quote_messages[0].guild.id}/{quote_messages[0].channel.id}/{quote_messages[0].id}, {quote_messages[0].created_at.astimezone().ctime()}:**')
             except Exception as e:
                 logger.error(f'Error sending first message while referencing first message object: {e}')
                 logger.error('Trying again, referencing second message object...')
                 try:
-                    await quote_guild.quote_channel.send(f'**https://discord.com/channels/{quote_messages[1].guild.id}/{quote_messages[1].channel.id}/{quote_messages[1].message.id}, {quote_messages[1].created_at.astimezone().ctime()}:**')
+                    await quote_guild.quote_channel.send(f'**https://discord.com/channels/{quote_messages[1].guild.id}/{quote_messages[1].channel.id}/{quote_messages[1].id}, {quote_messages[1].created_at.astimezone().ctime()}:**')
                 except Exception as e:
                     logger.error(f'Error referencing second message object: {e}')
                     await interaction.followup.send(f'Error: {e}')
