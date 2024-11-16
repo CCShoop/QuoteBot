@@ -51,9 +51,9 @@ class Quote():
             if self.content != '':
                 quote += f'"{self.content}"\n'
             if self.author.nick:
-                quote += f'**- {self.author.nick}, {self.date_time}, in <#{self.channel_id}>**\n'
+                quote += f'**- {self.author.nick},** {self.date_time}, https://discord.com/channels/{self.guild.id}/{self.channel_id}/{self.message_id}\n'
             else:
-                quote += f'**- {self.author.name}, {self.date_time}, in <#{self.channel_id}>**\n'
+                quote += f'**- {self.author.name},** {self.date_time}, https://discord.com/channels/{self.guild.id}/{self.channel_id}/{self.message_id}\n'
         return quote
 
 
