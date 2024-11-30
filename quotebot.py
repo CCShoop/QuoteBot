@@ -4,7 +4,7 @@ import os
 import json
 import logging
 from dotenv import load_dotenv
-from discord import app_commands, Interaction, Intents, Client, TextChannel, Message, Guild, File
+from discord import app_commands, Interaction, Intents, Client, TextChannel, Message, Guild, File, Activity, ActivityType
 
 
 load_dotenv()
@@ -121,6 +121,7 @@ client = QuoteClient(intents=Intents.all())
 async def on_ready():
     logger.info(f'{client.user} has connected to Discord!')
     client.load_json()
+    await client.change_presence(activity=Activity(type=ActivityType.watching, name="for quotes"))
 
 
 @client.tree.command(name='setchannel', description='Set a quote channel for a guild.')
